@@ -8,6 +8,11 @@ its entries into a versioned section with the release date (`YYYY-MM-DD`).
 
 ## [Unreleased]
 
+### Fixed
+
+- Renamed the Coolify definition to `docker/compose-coolify.yaml` and resolved
+  its build context from the repository root; updated deployment settings.
+
 ### Added
 
 - Configurable `HOMEIO_VERSION` label next to the header logo, available locally

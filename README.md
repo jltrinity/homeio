@@ -68,7 +68,7 @@ unprivileged user with a read-only root filesystem and a writable data directory
 
 ## Deploy with Coolify
 
-Use `docker/compose.coolify.yaml` for production. The local `docker/compose.yaml`
+Use `docker/compose-coolify.yaml` for production. The local `docker/compose.yaml`
 continues to share `./data` with local commands. The Coolify configuration instead
 mounts a persistent named volume at `/data`, uses the image's non-root user
 `10001:10001`, and receives configuration from Coolify without a local `.env`.
@@ -80,10 +80,18 @@ Create a Git-based application with these settings:
 | Setting | Value |
 | --- | --- |
 | Build strategy | Docker Compose |
-| Base Directory | `/docker` |
-| Docker Compose Location | `/compose.coolify.yaml` |
+| Base Directory | `/` |
+| Docker Compose Location | `/docker/compose-coolify.yaml` |
 | Public service | `app` |
 | Domain | `https://homeio.example.com:8000` (replace the hostname) |
+
+The build context is the repository root (`.`), with Dockerfile
+`docker/Dockerfile`. Keep Base Directory at `/`; do not switch it to `/docker`.
+For local configuration validation, explicitly use the same project directory:
+
+```bash
+docker compose --project-directory . --env-file .env -f docker/compose-coolify.yaml config --quiet
+```
 
 The domain's port selects the internal container port; public access uses HTTPS
 on port 443. No application port is published directly on the server. Configure
