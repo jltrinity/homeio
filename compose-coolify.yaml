@@ -2,7 +2,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: docker/Dockerfile
+      dockerfile: Dockerfile
     environment:
       HOMEIO_VERSION: ${HOMEIO_VERSION:-dev}
       HOMEIO_SECRET_KEY: ${HOMEIO_SECRET_KEY:?Set HOMEIO_SECRET_KEY in Coolify}

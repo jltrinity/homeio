@@ -31,7 +31,7 @@ def main() -> int:
         "--env-file",
         str(ROOT / ".env"),
         "-f",
-        str(ROOT / "docker/compose.yaml"),
+        str(ROOT / "compose.yaml"),
     ]
     try:
         if args.operation == "import":

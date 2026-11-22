@@ -3,17 +3,17 @@ name: homeio
 services:
   app:
     build:
-      context: ..
-      dockerfile: docker/Dockerfile
+      context: .
+      dockerfile: Dockerfile
     user: "${HOMEIO_UID:-1000}:${HOMEIO_GID:-1000}"
-    env_file: ../.env
+    env_file: .env
     environment:
       HOMEIO_DATABASE: /data/homeio.sqlite3
     ports:
       - "127.0.0.1:${HOMEIO_PORT:-8000}:8000"
     volumes:
       - type: bind
-        source: ../data
+        source: ./data
         target: /data
         bind:
           create_host_path: false

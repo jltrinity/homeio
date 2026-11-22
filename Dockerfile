@@ -7,7 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
     && useradd --uid 10001 --gid homeio --no-create-home homeio \
     && mkdir /data && chown homeio:homeio /data
 COPY --chown=homeio:homeio homeio ./homeio
-COPY --chown=homeio:homeio docker/entrypoint.sh ./entrypoint.sh
+COPY --chown=homeio:homeio entrypoint.sh ./entrypoint.sh
 USER homeio
 ENV HOMEIO_DATABASE=/data/homeio.sqlite3
 EXPOSE 8000

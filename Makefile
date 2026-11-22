@@ -6,7 +6,7 @@ PIP := $(PY) -m pip
 SQL ?= custom.sql
 BACKUP ?= data/backup.sqlite3
 FILE ?= homeio.sqlite3
-COMPOSE := docker compose --env-file .env -f docker/compose.yaml
+COMPOSE := docker compose --env-file .env -f compose.yaml
 
 .PHONY: help venv env install install-dev compile init setup run serve user reset-password import-sql import-check backup test check lint format docker-build docker-up docker-down docker-logs docker-init docker-user docker-import docker-import-check
 .PHONY: db-export db-import db-export-local db-import-local

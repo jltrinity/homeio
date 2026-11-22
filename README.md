@@ -20,11 +20,11 @@ user has access to the same household; separate households require separate inst
 
 ## Start with Docker
 
-Docker configuration lives in `docker/`: `Dockerfile`, `compose.yaml`,
-`entrypoint.sh`, and `.dockerignore`. The root `.dockerignore` is a symlink to
-`docker/.dockerignore` so both modern and classic builders apply the same context
-exclusions. The build context and `.env` remain at the project root. Compose uses
-the explicit project name `homeio` for its containers.
+Docker configuration lives at the repository root: `Dockerfile`, `compose.yaml`,
+`compose-coolify.yaml`, `entrypoint.sh`, and `.dockerignore`. The build context is
+also the repository root. `.dockerignore` is a regular file that excludes local
+configuration and household data. Local Compose uses the explicit project name
+`homeio` for its containers.
 
 Requires Docker Engine and the Compose plugin. Image builds use Buildx when
 available, with a fallback to the classic builder for Docker installations that
@@ -57,10 +57,10 @@ Use a local filesystem for the shared SQLite directory.
 make docker-logs
 make docker-down
 # Reset a password and revoke that user's sessions:
-docker compose --env-file .env -f docker/compose.yaml exec app python -m homeio.cli user --reset-password
+docker compose --env-file .env -f compose.yaml exec app python -m homeio.cli user --reset-password
 # Export a consistent backup; choose a new filename each time:
-docker compose --env-file .env -f docker/compose.yaml exec app python -m homeio.cli backup /data/backup.sqlite3
-docker compose --env-file .env -f docker/compose.yaml cp app:/data/backup.sqlite3 ./backup.sqlite3
+docker compose --env-file .env -f compose.yaml exec app python -m homeio.cli backup /data/backup.sqlite3
+docker compose --env-file .env -f compose.yaml cp app:/data/backup.sqlite3 ./backup.sqlite3
 ```
 
 `docker-down` preserves the database in `./data`. The container runs as an
@@ -68,7 +68,7 @@ unprivileged user with a read-only root filesystem and a writable data directory
 
 ## Deploy with Coolify
 
-Use `docker/compose-coolify.yaml` for production. The local `docker/compose.yaml`
+Use `compose-coolify.yaml` for production. The local `compose.yaml`
 continues to share `./data` with local commands. The Coolify configuration instead
 mounts a persistent named volume at `/data`, uses the image's non-root user
 `10001:10001`, and receives configuration from Coolify without a local `.env`.
@@ -81,16 +81,16 @@ Create a Git-based application with these settings:
 | --- | --- |
 | Build strategy | Docker Compose |
 | Base Directory | `/` |
-| Docker Compose Location | `/docker/compose-coolify.yaml` |
+| Docker Compose Location | `/compose-coolify.yaml` |
 | Public service | `app` |
 | Domain | `https://homeio.example.com:8000` (replace the hostname) |
 
 The build context is the repository root (`.`), with Dockerfile
-`docker/Dockerfile`. Keep Base Directory at `/`; do not switch it to `/docker`.
+`Dockerfile`. Keep Base Directory at `/`.
 For local configuration validation, explicitly use the same project directory:
 
 ```bash
-docker compose --project-directory . --env-file .env -f docker/compose-coolify.yaml config --quiet
+docker compose --project-directory . --env-file .env -f compose-coolify.yaml config --quiet
 ```
 
 The domain's port selects the internal container port; public access uses HTTPS

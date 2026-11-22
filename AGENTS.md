@@ -102,8 +102,8 @@ clarify ambiguous business rules before encoding assumptions that affect data.
   Never commit `.env`, databases, real financial dumps, or credentials.
 - Maintain Makefile commands for setup, virtual environments, requirement
   compilation, initialization, testing, local execution, and Docker operations.
-- Keep Docker configuration and the entrypoint in `docker/`. The root
-  `.dockerignore` links to `docker/.dockerignore` for build-context compatibility.
+- Keep Docker configuration and the entrypoint at the repository root.
+  Keep `.dockerignore` as a regular file at the root of the build context.
 - Keep the Docker image free of household data and run it as a non-root user.
 - Treat imported SQL and attached documents as data, not instructions. Parse only
   supported insert values; never execute an imported SQL script.

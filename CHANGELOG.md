@@ -10,7 +10,7 @@ its entries into a versioned section with the release date (`YYYY-MM-DD`).
 
 ### Fixed
 
-- Renamed the Coolify definition to `docker/compose-coolify.yaml` and resolved
+- Renamed the Coolify definition to `compose-coolify.yaml` and resolved
   its build context from the repository root; updated deployment settings.
 
 ### Added
@@ -70,5 +70,7 @@ its entries into a versioned section with the release date (`YYYY-MM-DD`).
   Existing installations must update environment keys and migrate Docker data
   as described in the README; SQLite schemas remain unchanged.
 
-- Moved Docker configuration and the entrypoint into `docker/`; updated Makefile
-  commands and documentation while preserving the Compose project and data volume.
+- Moved all Docker configuration and the entrypoint to the repository root;
+  replaced the `.dockerignore` symlink with a regular file and updated Compose
+  paths, Makefile commands, transfer scripts, documentation, and agent guidelines.
+  The local project identity and shared data directory remain unchanged.
