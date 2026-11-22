@@ -1,0 +1,14 @@
+.git
+.venv
+.env
+.env.*
+*.sql
+*.sqlite3*
+data
+import
+__pycache__
+*.pyc
+tests
+.agents
+.codex
+.aws

@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if item_id else 'Nuevo' }} movimiento · Homeio{% endblock %}
+{% block content %}
+<div class="form-shell mx-auto"><a href="/movements" class="link-accent">Volver a movimientos</a><h1 class="mt-3 mb-4">{{ 'Editar' if item_id else 'Nuevo' }} movimiento</h1><div class="panel p-4 p-md-5">
+{% if error %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endif %}
+<form method="post" id="movement-form">
+<input type="hidden" name="csrf_token" value="{{ session.csrf }}">
+<div class="row g-3">
+  <div class="col-sm-6"><label for="movement_type" class="form-label">Tipo</label><select name="movement_type" id="movement_type" class="form-select"><option value="0" {{ 'selected' if values.movement_type|string == '0' }}>Gasto</option><option value="1" {{ 'selected' if values.movement_type|string == '1' }}>Ingreso</option></select></div>
+  <div class="col-sm-6"><label for="amount" class="form-label">Importe (€)</label><input id="amount" name="amount" type="number" min="0.01" max="999999999.99" step="0.01" inputmode="decimal" class="form-control" value="{{ values.amount|default('') }}" required></div>
+  <div class="col-12"><label for="description" class="form-label">Descripción</label><input id="description" name="description" class="form-control" value="{{ values.description|default('') }}" maxlength="255" placeholder="¿En qué consiste este movimiento?" required></div>
+  <div class="col-12"><label for="valid_date" class="form-label">Fecha</label><input type="date" id="valid_date" name="valid_date" class="form-control" value="{{ values.valid_date }}" required></div>
+  <div class="col-sm-6"><label for="category_id" class="form-label">Categoría</label><select id="category_id" name="category_id" class="form-select"><option value="">Sin categoría</option>{% for item in categories %}<option value="{{ item.id }}" data-type="{{ item.movement_type }}" {{ 'selected' if values.category_id|string == item.id|string }}>{{ item.name }}</option>{% endfor %}</select></div>
+  <div class="col-sm-6"><label for="site_id" class="form-label">Establecimiento / origen</label><select id="site_id" name="site_id" class="form-select"><option value="">Sin establecimiento</option>{% for item in sites %}<option value="{{ item.id }}" data-type="{{ item.movement_type }}" {{ 'selected' if values.site_id|string == item.id|string }}>{{ item.name }}</option>{% endfor %}</select></div>
+</div><p class="text-secondary small mt-3">Las categorías y establecimientos disponibles dependen del tipo de movimiento.</p><div class="d-flex gap-2 mt-4"><button class="btn btn-primary">Guardar movimiento</button><a href="/movements" class="btn btn-outline-secondary">Cancelar</a></div>
+</form>
+</div>{% if item_id %}<form method="post" action="/movements/{{ item_id }}/archive" class="mt-4" data-confirm="¿Archivar este movimiento? Se conservará en el historial, pero dejará de contar en los totales."><input type="hidden" name="csrf_token" value="{{ session.csrf }}"><button class="btn btn-outline-danger">Archivar movimiento</button><p class="text-secondary small mt-2">Se conserva el registro, pero se excluye de los totales.</p></form>{% endif %}</div>
+{% endblock %}

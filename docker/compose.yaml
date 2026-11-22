@@ -1,0 +1,33 @@
+name: homeio
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    user: "${HOMEIO_UID:-1000}:${HOMEIO_GID:-1000}"
+    env_file: ../.env
+    environment:
+      HOMEIO_DATABASE: /data/homeio.sqlite3
+    ports:
+      - "127.0.0.1:${HOMEIO_PORT:-8000}:8000"
+    volumes:
+      - type: bind
+        source: ../data
+        target: /data
+        bind:
+          create_host_path: false
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD", "python", "-c", "import http.client,os; c=http.client.HTTPConnection('127.0.0.1',8000,timeout=5); c.request('GET','/health',headers={'Host':os.environ.get('HOMEIO_ALLOWED_HOSTS','localhost').split(',')[0]}); assert c.getresponse().status == 200"]
+      interval: 30s
+      timeout: 6s
+      retries: 3
+      start_period: 10s

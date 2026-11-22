@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Entrar · Homeio{% endblock %}
+{% block content %}
+<div class="row align-items-center g-5 login-layout">
+  <section class="col-lg-6"><span class="eyebrow">LAS CUENTAS, EN SU SITIO</span><h1 class="display-4 fw-semibold mt-3">Tu hogar.<br>Tus planes.<br><span class="text-accent">Todo más claro.</span></h1><p class="lead text-secondary mt-4">Un espacio para entender lo que entra, lo que sale y lo que puedes construir con ello.</p><div class="login-note mt-4">Ingresos, gastos y perspectiva. En un mismo lugar.</div></section>
+  <section class="col-lg-5 offset-lg-1"><div class="panel p-4 p-md-5"><span class="eyebrow">BIENVENIDO A HOMEIO</span><h2 class="mt-3 h3">Entra en tu hogar</h2><p class="text-secondary mb-4">Accede para consultar y organizar tus cuentas.</p>
+    {% if error %}<div class="alert alert-danger" role="alert">{{ error }}</div>{% endif %}
+    <form method="post" action="/login">
+      <input type="hidden" name="csrf_token" value="{{ session.csrf }}">
+      <label for="username" class="form-label">Usuario</label><input id="username" name="username" class="form-control mb-3" autocomplete="username" maxlength="80" required autofocus>
+      <label for="password" class="form-label">Contraseña</label><input id="password" name="password" type="password" class="form-control mb-4" autocomplete="current-password" maxlength="128" required>
+      <button class="btn btn-primary w-100 py-3">Entrar</button>
+    </form><p class="small text-secondary mt-4 mb-0">Acceso privado. Si necesitas recuperar el acceso, contacta con quien administra tu hogar.</p>
+  </div></section>
+</div>
+{% endblock %}

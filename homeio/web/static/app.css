@@ -1,0 +1,45 @@
+:root { color-scheme: light; --ink: #203c3b; --accent: #17675c; --muted: #647572; --line: #e3ebe8; }
+body { background: #f6f9f8; color: var(--ink); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 1rem; }
+a { text-underline-offset: 4px; }
+h1 { font-size: clamp(1.8rem, 3vw, 2.4rem); letter-spacing: -.04em; font-weight: 650; }
+h2, h3 { letter-spacing: -.025em; }
+.app-header { background: white; border-bottom: 1px solid var(--line); }
+.brand { font-size: 1.7rem; font-weight: 750; color: var(--ink); text-decoration: none; letter-spacing: -.08em; display: flex; align-items: center; gap: .35rem; }
+.brand-mark { background: var(--accent); color: white; border-radius: 11px; width: 35px; height: 35px; line-height: 30px; text-align: center; font-style: italic; margin-right: .2rem; }
+.brand-dot { color: var(--accent); margin-left: -.3rem; }
+.nav-item { text-decoration: none; color: #536562; padding: .55rem .85rem; border-radius: .5rem; font-size: .925rem; font-weight: 500; }
+.nav-item:hover, .nav-item.selected { color: var(--accent); background: #edf5f1; }
+.user-label { font-size: .875rem; max-width: 9rem; overflow: hidden; text-overflow: ellipsis; }
+.eyebrow { color: var(--accent); font-size: .78rem; letter-spacing: .13em; font-weight: 700; }
+.panel { background: white; border: 1px solid var(--line); border-radius: 1rem; box-shadow: 0 3px 12px #193a2c03; }
+.metric { padding: 1.5rem; height: 100%; }
+.metric-label { display: flex; justify-content: space-between; align-items: center; color: #526561; font-size: .95rem; }
+.metric-icon { border-radius: 50%; background: #edf6f2; width: 28px; height: 28px; text-align: center; font-size: 1.2rem; }
+.metric-value { font-size: clamp(1.7rem, 2.6vw, 2.4rem); font-weight: 650; letter-spacing: -.04em; margin: 1rem 0 .4rem; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.balance-card { background: #e8f3ed; border-color: #d0e6da; }
+.income, .text-accent, .link-accent { color: var(--accent); }
+.expense { color: #a54d3e; }
+.btn { border-radius: .5rem; font-weight: 550; padding: .6rem 1rem; }
+.btn-primary { --bs-btn-bg: #17675c; --bs-btn-border-color: #17675c; --bs-btn-hover-bg: #105448; --bs-btn-hover-border-color: #105448; --bs-btn-active-bg: #105448; --bs-btn-active-border-color: #105448; }
+.btn-outline-secondary { --bs-btn-color: #536562; --bs-btn-border-color: #d9e2de; --bs-btn-hover-bg: #edf5f1; --bs-btn-hover-color: #17675c; --bs-btn-hover-border-color: #afc6bb; }
+.form-control, .form-select { padding: .7rem .85rem; border-color: #d8e2dc; border-radius: .5rem; }
+.form-control:focus, .form-select:focus { border-color: #17675c; box-shadow: 0 0 0 .2rem #17675c20; }
+.form-label { font-size: .9rem; font-weight: 550; }
+.month-input { width: 180px; }
+.chart-container { position: relative; height: 265px; width: 100%; }
+.table { --bs-table-color: #29413e; --bs-table-border-color: #edf1ee; }
+.table th { color: #677872; font-size: .8rem; font-weight: 600; background: #fafcfb; }
+.table th, .table td { padding: 1rem 1.25rem; }
+.table td { font-size: .9rem; }
+.category-badge { display: inline-block; border-radius: .35rem; padding: .3rem .5rem; background: #f1f5f2; color: #52665b; font-size: .8rem; }
+.empty-state { padding: 3rem 1.5rem; text-align: center; }
+.empty-symbol { border-radius: 50%; background: #e8f3ed; width: 55px; height: 55px; margin: 0 auto 1rem; font-size: 2rem; }
+.form-shell { max-width: 760px; }
+.catalog-item { border-top: 1px solid var(--line); }
+.catalog-item summary { cursor: pointer; }
+.login-layout { min-height: 68vh; }
+.login-note { border-left: 3px solid #71a78c; padding: .75rem 1.25rem; color: #536562; }
+.footer { border-top: 1px solid var(--line); color: #657770; font-size: .8rem; }
+.skip-link { display: block; background: white; padding: 1rem; }
+@media (max-width: 767px) { .main-nav { order: 3; width: 100%; } .nav-item { padding: .5rem .6rem; font-size: .875rem; } .table th, .table td { padding: .8rem; } .login-layout { min-height: auto; } .chart-container { height: 240px; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; } }

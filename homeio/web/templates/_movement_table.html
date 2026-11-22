@@ -1,0 +1,10 @@
+{% if movements %}
+<div class="table-responsive"><table class="table align-middle mb-0">
+<thead><tr><th scope="col">Movimiento</th><th scope="col">Fecha</th><th scope="col">Categoría</th><th scope="col" class="text-end">Importe</th><th scope="col"><span class="visually-hidden">Acciones</span></th></tr></thead>
+<tbody>{% for item in movements %}<tr>
+<td><div class="fw-semibold">{{ item.description }}</div><div class="small text-secondary">{{ item.site_name or 'Sin establecimiento' }}</div></td>
+<td class="text-nowrap">{{ item.valid_date }}</td><td><span class="category-badge">{{ item.category_name or 'Sin categoría' }}</span></td>
+<td class="text-end text-nowrap fw-semibold {{ 'income' if item.movement_type else 'expense' }}">{{ '+' if item.movement_type else '−' }}{{ item.amount_cents|euro }}</td>
+<td><a class="btn btn-sm btn-outline-secondary" href="/movements/{{ item.id }}/edit" aria-label="Editar {{ item.description }}">Editar</a></td>
+</tr>{% endfor %}</tbody></table></div>
+{% else %}<div class="empty-state"><div class="empty-symbol">€</div><h3 class="h5">Un mes por escribir</h3><p class="text-secondary">No hay movimientos para esta selección. Añade el primero o consulta otro mes.</p><a href="/movements/new" class="btn btn-primary">Añadir movimiento</a></div>{% endif %}

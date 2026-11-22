@@ -1,0 +1,7 @@
+-c requirements.txt
+-r requirements.in
+# pip-tools uses pip internals; keep this verified pair together.
+pip==25.0.1
+pip-tools==7.5.2
+click==8.1.8
+ruff==0.14.6
