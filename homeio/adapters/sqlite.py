@@ -137,9 +137,16 @@ class SQLiteLedger:
             ).fetchone()
             return dict(row) if row else None
 
-    def movements(self, month: str, query: str = "", page: int = 1) -> tuple[list[dict], int]:
-        params = (month + "%", "%" + query + "%")
+    def movements(
+        self, month: str, query: str = "", page: int = 1, *, movement_type: int | None = None
+    ) -> tuple[list[dict], int]:
+        params: tuple[str | int, ...] = (month + "%", "%" + query + "%")
         where = " WHERE m.active=1 AND m.valid_date LIKE ? AND m.description LIKE ?"
+        if movement_type is not None:
+            if movement_type not in (0, 1):
+                raise ValueError("Invalid movement type")
+            where += " AND m.movement_type=?"
+            params += (movement_type,)
         with connect(self.path) as db:
             count = db.execute("SELECT count(*) FROM movement m" + where, params).fetchone()[0]
             rows = db.execute(

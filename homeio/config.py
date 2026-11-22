@@ -16,6 +16,7 @@ class Settings:
     cookie_secure: bool = False
     https: bool = False
     session_hours: int = 8
+    version: str = "dev"
 
     @classmethod
     def load(cls) -> "Settings":
@@ -38,4 +39,13 @@ class Settings:
         )
         if not hosts or "*" in hosts:
             raise ValueError("Explicit allowed hosts are required.")
-        return cls(path if path.is_absolute() else ROOT / path, secret, hosts, secure, https, hours)
+        version = os.getenv("HOMEIO_VERSION", "dev").strip() or "dev"
+        return cls(
+            path if path.is_absolute() else ROOT / path,
+            secret,
+            hosts,
+            secure,
+            https,
+            hours,
+            version,
+        )

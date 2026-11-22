@@ -2,7 +2,13 @@
 {% block title %}Movimientos · Homeio{% endblock %}
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4"><div><span class="eyebrow">EL DÍA A DÍA</span><h1 class="mt-2">Tus movimientos</h1><p class="text-secondary mb-0">Un lugar para cada ingreso y cada gasto.</p></div><a href="/movements/new" class="btn btn-primary">+ Añadir movimiento</a></div>
-<form method="get" class="panel p-3 mb-4 row g-3 mx-0 align-items-end"><div class="col-sm-3"><label for="month" class="form-label">Mes</label><input id="month" name="month" type="month" class="form-control" value="{{ month }}" required></div><div class="col-sm-6"><label for="q" class="form-label">Buscar descripción</label><input id="q" name="q" class="form-control" value="{{ query }}" maxlength="255" placeholder="Compra, nómina, recibo…"></div><div class="col-sm-3"><button class="btn btn-primary w-100">Filtrar</button></div></form>
+<nav class="mb-4" aria-label="Filtrar por tipo de movimiento">
+  <div class="btn-group">
+    <a href="{{ expenses_url }}" class="btn {{ 'btn-primary' if movement_type == 0 else 'btn-outline-primary' }}"{% if movement_type == 0 %} aria-current="true"{% endif %}>Gastos</a>
+    <a href="{{ income_url }}" class="btn {{ 'btn-primary' if movement_type == 1 else 'btn-outline-primary' }}"{% if movement_type == 1 %} aria-current="true"{% endif %}>Ingresos</a>
+  </div>
+</nav>
+<form method="get" class="panel p-3 mb-4 row g-3 mx-0 align-items-end"><input type="hidden" name="movement_type" value="{{ movement_type }}"><div class="col-sm-3"><label for="month" class="form-label">Mes</label><input id="month" name="month" type="month" class="form-control" value="{{ month }}" required></div><div class="col-sm-6"><label for="q" class="form-label">Buscar descripción</label><input id="q" name="q" class="form-control" value="{{ query }}" maxlength="255" placeholder="Compra, nómina, recibo…"></div><div class="col-sm-3"><button class="btn btn-primary w-100">Filtrar</button></div></form>
 <section class="panel overflow-hidden"><div class="p-4 text-secondary small">{{ count }} resultados · {{ month }}</div>{% include '_movement_table.html' %}</section>
 <nav class="d-flex justify-content-between align-items-center mt-4" aria-label="Paginación"><span>{% if previous %}<a class="btn btn-outline-secondary" href="{{ previous }}">Anterior</a>{% endif %}</span><span class="text-secondary">Página {{ page }}</span><span>{% if next %}<a class="btn btn-outline-secondary" href="{{ next }}">Siguiente</a>{% endif %}</span></nav>
 {% endblock %}

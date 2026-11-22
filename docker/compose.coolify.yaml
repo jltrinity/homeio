@@ -4,6 +4,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile
     environment:
+      HOMEIO_VERSION: ${HOMEIO_VERSION:-dev}
       HOMEIO_SECRET_KEY: ${HOMEIO_SECRET_KEY:?Set HOMEIO_SECRET_KEY in Coolify}
       HOMEIO_DATABASE: /data/homeio.sqlite3
       HOMEIO_ALLOWED_HOSTS: ${HOMEIO_ALLOWED_HOSTS:?Set HOMEIO_ALLOWED_HOSTS in Coolify}

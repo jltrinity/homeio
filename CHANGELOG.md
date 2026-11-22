@@ -10,6 +10,12 @@ its entries into a versioned section with the release date (`YYYY-MM-DD`).
 
 ### Added
 
+- Configurable `HOMEIO_VERSION` label next to the header logo, available locally
+  and in Coolify, with `dev` as the default.
+
+- Quick expense/income filters on the movements page, defaulting to expenses
+  and preserving the selection in search and pagination.
+
 - Dedicated Coolify Compose configuration with persistent SQLite storage,
   required deployment variables, HTTPS settings, and a Python health check.
   Documented deployment, data migration, and daily backup scheduling.

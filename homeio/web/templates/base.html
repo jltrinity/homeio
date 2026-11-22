@@ -14,7 +14,10 @@
 <a href="#main" class="visually-hidden-focusable skip-link">Saltar al contenido</a>
 <header class="app-header">
   <div class="container-xxl py-3 d-flex flex-wrap gap-3 align-items-center justify-content-between">
-    <a href="/" class="brand" aria-label="Homeio, inicio"><span class="brand-mark">h</span> homeio<span class="brand-dot">.</span></a>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <a href="/" class="brand" aria-label="Homeio, inicio"><span class="brand-mark">h</span> homeio<span class="brand-dot">.</span></a>
+      <span class="badge rounded-pill text-secondary bg-light border"><span class="visually-hidden">Versión </span>{{ app_version }}</span>
+    </div>
     {% if session and session.user_id %}
     <nav class="main-nav d-flex flex-wrap gap-1" aria-label="Navegación principal">
       <a class="nav-item {{ 'selected' if path == '/' }}" href="/">Resumen</a>
@@ -30,6 +33,6 @@
   </div>
 </header>
 <main id="main" class="container-xxl py-4 py-lg-5">{% block content %}{% endblock %}</main>
-<footer class="container-xxl py-4 footer d-flex flex-wrap justify-content-between gap-2"><span>homeio · Contabilidad del hogar</span><span>jlrb</span></footer>
+<footer class="container-xxl py-4 footer d-flex flex-wrap justify-content-between gap-2"><span>homeio · Contabilidad del hogar</span><span>jlrb 2027</span></footer>
 </body>
 </html>

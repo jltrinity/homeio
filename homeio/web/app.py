@@ -132,6 +132,7 @@ class App:
                 session=request.session if request else None,
                 path=request.path if request else "",
                 today=date.today().isoformat(),
+                app_version=self.settings.version,
                 **context,
             ),
             status,
@@ -210,14 +211,18 @@ class App:
     def movements(self, request: Request) -> Response:
         month = self.month(request)
         query = request.query.get("q", "")[:255]
+        selected_type = request.query.get("movement_type", "0")
+        if selected_type not in ("0", "1"):
+            raise HTTPError(400, "Tipo de movimiento inválido.")
+        movement_type = int(selected_type)
         try:
             page = int(request.query.get("page", "1"))
             if not 1 <= page <= 1_000_000:
                 raise ValueError
         except ValueError as exc:
             raise HTTPError(400, "Página inválida.") from exc
-        rows, count = self.ledger.movements(month, query, page)
-        params = {"month": month, "q": query}
+        rows, count = self.ledger.movements(month, query, page, movement_type=movement_type)
+        params = {"month": month, "q": query, "movement_type": movement_type}
         return self.render(
             "movements.html",
             request,
@@ -225,6 +230,9 @@ class App:
             count=count,
             month=month,
             query=query,
+            movement_type=movement_type,
+            expenses_url="?" + urlencode(dict(params, movement_type=0)),
+            income_url="?" + urlencode(dict(params, movement_type=1)),
             page=page,
             previous="?" + urlencode(dict(params, page=page - 1)) if page > 1 else "",
             next="?" + urlencode(dict(params, page=page + 1)) if page * 30 < count else "",

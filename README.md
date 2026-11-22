@@ -298,6 +298,10 @@ over `.env`.
 | `HOMEIO_COOKIE_SECURE` | Send session cookies only over HTTPS when `true` |
 | `HOMEIO_HTTPS` | Enable HSTS; requires secure cookies and an HTTPS deployment |
 | `HOMEIO_SESSION_HOURS` | Fixed authenticated session lifetime, 1–24 hours (default 8) |
+| `HOMEIO_VERSION` | Version shown next to the Homeio logo (default `dev`), e.g. `1.2.0` |
+
+Set `HOMEIO_VERSION` in `.env` locally or in Coolify's environment variables.
+Restart the local server or recreate/redeploy the container after changing it.
 
 Passwords use independently salted `hashlib.scrypt` hashes. Login rotates opaque
 session tokens; only token hashes are stored in SQLite. Anonymous login sessions

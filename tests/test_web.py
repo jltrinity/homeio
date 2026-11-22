@@ -2,6 +2,7 @@ import io
 import re
 import tempfile
 import unittest
+from html import unescape
 from http.cookies import SimpleCookie
 from pathlib import Path
 from urllib.parse import urlencode
@@ -186,6 +187,45 @@ class WebTests(unittest.TestCase):
         self.assertEqual(self.request("/movements/999/edit")["status"], 404)
         self.assertEqual(self.request("/?month=2026-99")["status"], 400)
         self.assertEqual(self.request("/movements?page=-1")["status"], 400)
+
+    def test_movement_filters_default_to_expenses_and_preserve_search(self):
+        self.login()
+        self.app.ledger.save_movement(Movement("Shared expense", "2026-11-01", 100, 0))
+        for index in range(31):
+            self.app.ledger.save_movement(Movement(f"Shared income {index}", "2026-11-01", 200, 1))
+        self.app.ledger.save_movement(Movement("Other income", "2026-11-01", 300, 1))
+        self.app.ledger.save_movement(Movement("Shared October", "2026-10-01", 300, 1))
+        response = self.request("/movements?month=2026-11&q=Shared")
+        self.assertEqual(response["status"], 200)
+        self.assertIn("Shared expense", response["body"])
+        self.assertNotIn("Shared income", response["body"])
+        self.assertIn("1 resultados", response["body"])
+        self.assertIn('aria-current="true">Gastos', response["body"])
+        income_link = re.search(r'href="([^"]+)"[^>]*>Ingresos</a>', response["body"])
+        response = self.request("/movements" + unescape(income_link.group(1)))
+        self.assertEqual(response["status"], 200)
+        self.assertIn("31 resultados", response["body"])
+        self.assertNotIn("Shared expense", response["body"])
+        self.assertNotIn("Other income", response["body"])
+        self.assertNotIn("Shared October", response["body"])
+        self.assertIn('name="movement_type" value="1"', response["body"])
+        self.assertIn('aria-current="true">Ingresos', response["body"])
+        next_link = re.search(r'href="([^"]+)">Siguiente</a>', response["body"])
+        response = self.request("/movements" + unescape(next_link.group(1)))
+        self.assertEqual(response["status"], 200)
+        self.assertIn("Página 2", response["body"])
+        self.assertEqual(response["body"].count('aria-label="Editar '), 1)
+        expense_link = re.search(r'href="([^"]+)"[^>]*>Gastos</a>', response["body"])
+        response = self.request("/movements" + unescape(expense_link.group(1)))
+        self.assertIn("Página 1", response["body"])
+        self.assertIn("Shared expense", response["body"])
+
+    def test_invalid_movement_filters_are_rejected(self):
+        self.login()
+        for value in ("", "2", "-1", "expense", "0 OR 1=1"):
+            with self.subTest(value=value):
+                response = self.request("/movements?" + urlencode({"movement_type": value}))
+                self.assertEqual(response["status"], 400)
         self.assertEqual(self.request("/logout")["status"], 405)
 
     def test_no_unexpected_exception_detail_leaks(self):

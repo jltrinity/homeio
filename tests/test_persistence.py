@@ -100,6 +100,27 @@ class ImportTests(DatabaseCase):
 
 
 class LedgerTests(DatabaseCase):
+    def test_movement_type_filter_keeps_counts_and_pagination_consistent(self):
+        for index in range(31):
+            self.ledger.save_movement(Movement(f"Match expense {index}", "2026-11-01", 100, 0))
+        self.ledger.save_movement(Movement("Match income", "2026-11-01", 200, 1))
+        archived = self.ledger.save_movement(Movement("Match archived", "2026-11-01", 100, 0))
+        self.ledger.archive_movement(archived)
+        self.ledger.save_movement(Movement("Match other month", "2026-10-01", 100, 0))
+        self.ledger.save_movement(Movement("Unrelated", "2026-11-01", 100, 0))
+        rows, count = self.ledger.movements("2026-11", "Match", movement_type=0)
+        self.assertEqual((len(rows), count), (30, 31))
+        self.assertTrue(all(row["movement_type"] == 0 for row in rows))
+        rows, count = self.ledger.movements("2026-11", "Match", 2, movement_type=0)
+        self.assertEqual((len(rows), count), (1, 31))
+        rows, count = self.ledger.movements("2026-11", "Match", movement_type=1)
+        self.assertEqual((len(rows), count), (1, 1))
+        self.assertEqual(rows[0]["description"], "Match income")
+        self.assertEqual(self.ledger.movements("2026-11", "Match")[1], 32)
+        self.assertEqual(self.ledger.movements("2026-12", movement_type=1), ([], 0))
+        with self.assertRaises(ValueError):
+            self.ledger.movements("2026-11", movement_type=2)
+
     def test_create_edit_and_archive(self):
         service = Accounting(self.ledger)
         item = Movement("Groceries", "2026-11-01", 1234, 0)
