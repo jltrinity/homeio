@@ -42,10 +42,11 @@ Open **http://localhost:8000** and sign in with the username and password entere
 at the `docker-user` prompt. There is no default account or password.
 `docker-up` creates `.env` with a random secret if absent and initializes the schema.
 Imports use a temporary read-only bind mount; the SQL file is never copied into the
-image. Docker bind-mounts the project directory `./data` at `/data`, so both
+image. Docker bind-mounts the project directory `./data` at `/app/data` (and `/data`
+for compatibility), so both
 local commands and Docker use the same `data/homeio.sqlite3` file. Keep
-`HOMEIO_DATABASE=data/homeio.sqlite3` in `.env` for local commands; Docker uses
-`/data/homeio.sqlite3`. A user created with `make user` is also available in Docker,
+`HOMEIO_DATABASE=data/homeio.sqlite3` in `.env`; both local commands and Docker now honor this value.
+`HOMEIO_BACKUP=data/backups` selects the persistent backup directory. A user created with `make user` is also available in Docker,
 and an SQL import from either environment is immediately visible in both.
 
 `make env` creates `data/` and records `HOMEIO_UID`/`HOMEIO_GID` for the host user.
@@ -58,9 +59,8 @@ make docker-logs
 make docker-down
 # Reset a password and revoke that user's sessions:
 docker compose --env-file .env -f compose.yaml exec app python -m homeio.cli user --reset-password
-# Export a consistent backup; choose a new filename each time:
-docker compose --env-file .env -f compose.yaml exec app python -m homeio.cli backup /data/backup.sqlite3
-docker compose --env-file .env -f compose.yaml cp app:/data/backup.sqlite3 ./backup.sqlite3
+# Export a consistent backup with a unique filename in HOMEIO_BACKUP:
+docker compose --env-file .env -f compose.yaml exec app python -m homeio.cli backup
 ```
 
 `docker-down` preserves the database in `./data`. The container runs as an
@@ -70,10 +70,26 @@ unprivileged user with a read-only root filesystem and a writable data directory
 
 Use `compose-coolify.yaml` for production. The local `compose.yaml`
 continues to share `./data` with local commands. The Coolify configuration instead
-mounts a persistent named volume at `/data`, uses the image's non-root user
-`10001:10001`, and receives configuration from Coolify without a local `.env`.
-A new volume inherits the image's `/data` ownership; an existing volume must
-already allow UID/GID `10001:10001` to read and write its directory and files.
+bind-mounts the server directory `/srv/homeio` at `/data`, uses the image's non-root
+user `10001:10001`, and receives configuration from Coolify without a local `.env`.
+Before deploying, prepare the directory on the deployment server:
+
+```bash
+sudo install -d -m 700 -o 10001 -g 10001 /srv/homeio /srv/homeio/backups
+```
+
+The mount requires the directory to exist, avoiding an automatically created
+root-owned directory. With the default environment values, the database is
+`/srv/homeio/homeio.sqlite3` and backups are in `/srv/homeio/backups` on the server.
+
+When migrating from the previous `homeio-data` named volume, stop the application
+and all writers first. Locate the old volume with `docker volume ls` and
+`docker volume inspect VOLUME_NAME --format '{{ .Mountpoint }}'`. Copy its contents,
+including any SQLite WAL/SHM files and backups, into the empty `/srv/homeio`
+directory before deploying the new mount. Set ownership of the migrated files
+to `10001:10001` and keep them private. Preserve the old volume until the new
+deployment and its data have been verified; changing the mount does not migrate
+data automatically.
 
 Create a Git-based application with these settings:
 
@@ -105,14 +121,26 @@ Set `HOMEIO_SECRET_KEY` to a random secret of at least 32 characters and
 python3 -c 'import secrets; print(secrets.token_urlsafe(48))'
 ```
 
-The Compose file fixes `HOMEIO_DATABASE=/data/homeio.sqlite3`, secure cookies,
-and HTTPS headers. It includes a Python health check, so curl is not required.
+Set `HOMEIO_DATABASE=/data/homeio.sqlite3` (a SQLite file) and
+`HOMEIO_BACKUP=/data/backups` (a directory) in Coolify. These are also the defaults.
+Both paths are stored in the persistent `/srv/homeio` server directory, outside the
+container's writable layer, and survive container replacement and redeployment.
+You can choose other filenames/subdirectories under `/data`, for example
+`HOMEIO_DATABASE=/data/ledger/household.sqlite3` and `HOMEIO_BACKUP=/data/snapshots`.
+If you choose paths outside `/data`, mount persistent storage at those paths and
+make it writable by UID/GID `10001:10001`. Mount the entire database directory so
+SQLite's WAL and SHM files are persisted too. Container removal does not delete
+the bind-mounted server directory. Changing a path does not migrate
+existing data: stop the application and restore a consistent snapshot at the new
+location before restarting.
+
+The Compose file fixes secure cookies and HTTPS headers. It includes a Python health check, so curl is not required.
 Deploy and check the logs and health status. For a fresh database, create a user
 in the `app` container terminal with `python -m homeio.cli user`.
 
 To keep existing users and movements, export a consistent local snapshot using
-`make db-export-local FILE=homeio-coolify.sqlite3`. Transfer that snapshot privately
-to the server, stop the application, and restore it into its persistent volume
+`.venv/bin/python scripts/database_transfer.py export --local --file homeio-coolify.sqlite3`. Transfer that snapshot privately
+to the server, stop the application, and restore it into `/srv/homeio`
 as `homeio.sqlite3` with owner `10001:10001` and permissions `600` before restarting.
 Back up any existing destination database first. Storage on the deployment server
 does not synchronize with your workstation's `data/` directory.
@@ -121,11 +149,11 @@ For daily backups, add a Scheduled Task targeting `app`, enable Run in a shell,
 and use frequency `0 3 * * *` with this command:
 
 ```sh
-mkdir -p /data/backups && python -m homeio.cli backup "/data/backups/homeio-$(date -u +%Y%m%dT%H%M%S)-$$.sqlite3"
+python -m homeio.cli backup
 ```
 
 The schedule follows the deployment server's timezone. Execute it manually once
-and verify the output. These snapshots persist in the volume; configure separate
+and verify the output. These snapshots persist in `/srv/homeio/backups`; configure separate
 off-server copies and retention. The task only runs while the container is running.
 
 See [Coolify's Compose configuration](https://coolify.io/docs/applications/builds/docker-compose)
@@ -143,7 +171,7 @@ so users must sign in again.
 Docker Compose uses project `homeio` and the shared host directory `./data`.
 Existing `spendio` or `homeio-data` named volumes are not migrated automatically. Before switching,
 export a database backup from the old deployment and stop its containers. Restore
-the backup into the new deployment with `make db-import FILE=<backup.sqlite3>`
+the backup into the new deployment with `python3 scripts/database_transfer.py import --file <backup.sqlite3>`
 after placing it in `import/`. Keep the old volume until the restored data has
 been verified.
 
@@ -185,7 +213,8 @@ Run `make help` to list all commands.
 | `make lint` / `make format` | Check / format Python code with Ruff |
 | `make import-check SQL=path.sql` | Validate import, then roll back all writes |
 | `make import-sql SQL=path.sql` | Commit an initial import into an empty ledger |
-| `make backup BACKUP=data/new-backup.sqlite3` | Create a consistent backup without overwriting |
+| `make export-sql` | Export schema and data to SQL in `HOMEIO_BACKUP`; optional `EXPORT=path/dump.sql` |
+| `make backup` | Create a uniquely named consistent backup in `HOMEIO_BACKUP`; optional `BACKUP=path/file.sqlite3` overrides the destination |
 
 Edit `requirements.in` or `requirements-dev.in`, run `make compile`, and review
 and commit the generated requirements files. Both `requirements.txt` and
@@ -200,34 +229,50 @@ revocation. They never modify the real household database.
 
 ## Importing the supplied SQL
 
+### Export the database as SQL
+
+```bash
+make export-sql                              # Unique .sql file in HOMEIO_BACKUP
+make export-sql EXPORT=data/exports/dump.sql # Explicit destination
+# In a running Docker container:
+docker compose --env-file .env -f compose.yaml exec app python -m homeio.cli export-sql
+```
+
+Exports `HOMEIO_DATABASE` as a UTF-8 SQLite script containing the schema, indexes,
+and INSERT statements for all tables, including users and authentication data.
+The dump uses a consistent snapshot, includes committed WAL changes, and is
+published only when complete, with permissions `600`. Existing files are never
+overwritten. The default filename includes a UTC timestamp and a random suffix.
+This is SQLite SQL; the `import-sql` command accepts legacy MariaDB dumps and
+cannot import this format. For application-managed restoration, use SQLite
+snapshots and the transfer script below.
+
 ### Export and restore a complete SQLite database
 
 Export the Docker database and restore that same file using:
 
 ```bash
-make db-export                       # Writes import/homeio.sqlite3
-make db-import                       # Restores import/homeio.sqlite3
-make db-export FILE=household.sqlite3 # Writes import/household.sqlite3
-make db-import FILE=household.sqlite3 # Restores the same file
+python3 scripts/database_transfer.py export --file household.sqlite3
+python3 scripts/database_transfer.py import --file household.sqlite3
 ```
 
 The `import/` folder is created as needed and its contents are excluded from Git
 and Docker images. Exports are consistent SQLite snapshots, including household
 data, users, password hashes, and import history. Existing export files are never
-overwritten; choose another `FILE` to keep multiple snapshots. Only filenames
+overwritten; choose another `--file` to keep multiple snapshots. Only filenames
 inside `import/` are accepted.
 
 Restoration **replaces the entire destination database**. It validates the schema,
-integrity, and foreign keys before any changes, and saves the current database next
-to it as `homeio.before-import-<timestamp>-<id>.sqlite3`. Docker safety copies live
-in `/data`, visible locally under `./data`. Active sessions and login counters are cleared
+integrity, and foreign keys before any changes, and saves the current database
+in `HOMEIO_BACKUP` as `homeio.before-import-<timestamp>-<id>.sqlite3`. By default these copies are
+visible locally under `./data/backups`. Active sessions and login counters are cleared
 after restoration, so users must sign in again using the restored credentials.
 The Docker command stops the app during restoration and starts it again if it was
 running. Stop any local server as well and do not run other administrative writes
 during a restore, since both environments share the same file.
 
-For local SQLite, use `make db-export-local` and `make db-import-local` with the
-same `FILE` option. Stop both the local server and Docker before a local restore,
+For local SQLite, run `.venv/bin/python scripts/database_transfer.py` with
+`export --local` or `import --local` and the same `--file` option. Stop both the local server and Docker before a local restore,
 and restart them afterwards.
 These commands use `.env` and the local virtual environment. No real database is
 restored automatically when these commands are added or tested.
@@ -298,7 +343,8 @@ over `.env`.
 | Setting | Purpose |
 | --- | --- |
 | `HOMEIO_SECRET_KEY` | Random secret, at least 32 characters; used for HMAC login-throttle keys |
-| `HOMEIO_DATABASE` | Use `data/homeio.sqlite3` locally to share Docker’s `/data/homeio.sqlite3` |
+| `HOMEIO_DATABASE` | SQLite file: `data/homeio.sqlite3` locally/Compose; `/data/homeio.sqlite3` in Coolify |
+| `HOMEIO_BACKUP` | Backup directory: `data/backups` locally/Compose; `/data/backups` in Coolify. Used by `make backup`, CLI backups without a destination, and safety copies before restore |
 | `HOMEIO_UID` / `HOMEIO_GID` | Host user/group IDs for Docker access to `./data`; set by `make env` |
 | `HOMEIO_HOST` | Development-server bind address (default `127.0.0.1`) |
 | `HOMEIO_PORT` | Development-server and Docker published port (default `8000`) |

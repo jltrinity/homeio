@@ -233,3 +233,7 @@ data/
 *.sqlite3-*
 *_backup_*.sql
 .ruff_cache/
+
+# SQL exports may contain household and authentication data.
+*.sql
+!homeio/adapters/schema.sql

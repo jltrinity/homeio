@@ -6,7 +6,8 @@ services:
     environment:
       HOMEIO_VERSION: ${HOMEIO_VERSION:-dev}
       HOMEIO_SECRET_KEY: ${HOMEIO_SECRET_KEY:?Set HOMEIO_SECRET_KEY in Coolify}
-      HOMEIO_DATABASE: /data/homeio.sqlite3
+      HOMEIO_DATABASE: ${HOMEIO_DATABASE:-/data/homeio.sqlite3}
+      HOMEIO_BACKUP: ${HOMEIO_BACKUP:-/data/backups}
       HOMEIO_ALLOWED_HOSTS: ${HOMEIO_ALLOWED_HOSTS:?Set HOMEIO_ALLOWED_HOSTS in Coolify}
       HOMEIO_COOKIE_SECURE: "true"
       HOMEIO_HTTPS: "true"
@@ -14,7 +15,11 @@ services:
     expose:
       - "8000"
     volumes:
-      - homeio-data:/data
+      - type: bind
+        source: /srv/homeio
+        target: /data
+        bind:
+          create_host_path: false
     restart: unless-stopped
     read_only: true
     tmpfs:
@@ -29,6 +34,3 @@ services:
       timeout: 6s
       retries: 3
       start_period: 10s
-
-volumes:
-  homeio-data:

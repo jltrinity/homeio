@@ -41,11 +41,12 @@ def main() -> int:
         if args.local:
             from homeio.config import Settings
 
-            database = Settings.load().database
+            settings = Settings.load()
+            database = settings.database
             if args.operation == "export":
                 export_database(database, path)
             else:
-                backup = restore_database(database, path)
+                backup = restore_database(database, path, settings.backup)
                 print(f"Copia previa: {backup or 'base nueva'}")
         else:
             command = compose + [
@@ -55,12 +56,10 @@ def main() -> int:
                 "--no-deps",
                 "--entrypoint",
                 "python",
-                "-v",
-                f"{ROOT / 'homeio/adapters'}:/transfer:ro",
                 "app",
-                "/transfer/backups.py",
+                "-m",
+                "homeio.adapters.backups",
                 args.operation,
-                "/data/homeio.sqlite3",
             ]
             if args.operation == "export":
                 folder.mkdir(exist_ok=True)

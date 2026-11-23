@@ -4,12 +4,12 @@ VENV ?= .venv
 PY := $(VENV)/bin/python
 PIP := $(PY) -m pip
 SQL ?= custom.sql
-BACKUP ?= data/backup.sqlite3
-FILE ?= homeio.sqlite3
+BACKUP ?=
+EXPORT ?=
 COMPOSE := docker compose --env-file .env -f compose.yaml
 
 .PHONY: help venv env install install-dev compile init setup run serve user reset-password import-sql import-check backup test check lint format docker-build docker-up docker-down docker-logs docker-init docker-user docker-import docker-import-check
-.PHONY: db-export db-import db-export-local db-import-local
+.PHONY: export-sql
 
 help: ## 📖 Mostrar todos los comandos disponibles y su descripción
 	@echo ''
@@ -29,11 +29,8 @@ help: ## 📖 Mostrar todos los comandos disponibles y su descripción
 	@echo '  make reset-password         🔐 Cambiar una contraseña y cerrar todas las sesiones de ese usuario'
 	@echo '  make import-check           🔎 Validar el SQL sin guardar cambios (SQL=ruta.sql)'
 	@echo '  make import-sql             📥 Importar SQL en un libro vacío (SQL=ruta.sql)'
-	@echo '  make backup                 💾 Crear una copia SQLite sin sobrescribir archivos (BACKUP=data/copia.sqlite3)'
-	@echo '  make db-export              📤 Exportar SQLite mediante Docker a import/ (FILE=homeio.sqlite3)'
-	@echo '  make db-import              ♻️ Restaurar desde import/ mediante Docker con copia previa (FILE=homeio.sqlite3; detener también el servidor local)'
-	@echo '  make db-export-local        📤 Exportar SQLite localmente a import/ (FILE=homeio.sqlite3)'
-	@echo '  make db-import-local        ♻️ Restaurar desde import/ con copia previa (FILE=homeio.sqlite3; detener local y Docker)'
+	@echo '  make backup                 💾 Crear una copia en HOMEIO_BACKUP (destino opcional: BACKUP=ruta/copia.sqlite3)'
+	@echo '  make export-sql             📤 Volcar esquema y datos a SQL en HOMEIO_BACKUP (EXPORT=ruta/volcado.sql)'
 	@echo '  make test                   🧪 Ejecutar las pruebas de dominio, persistencia, importación y seguridad HTTP'
 	@echo '  make check                  ✅ Ejecutar las pruebas y comprobar la sintaxis de Python'
 	@echo '  make lint                   🔍 Revisar el código con Ruff (requiere make install-dev)'
@@ -94,20 +91,11 @@ import-check: ## 🔎 Validar el SQL sin guardar cambios (SQL=ruta.sql)
 import-sql: ## 📥 Importar SQL en un libro vacío (SQL=ruta.sql)
 	$(PY) -m homeio.cli import-sql "$(SQL)"
 
-backup: ## 💾 Crear una copia SQLite sin sobrescribir archivos (BACKUP=data/copia.sqlite3)
-	$(PY) -m homeio.cli backup "$(BACKUP)"
+backup: ## 💾 Crear una copia en HOMEIO_BACKUP (destino opcional: BACKUP=ruta/copia.sqlite3)
+	$(PY) -m homeio.cli backup $(if $(BACKUP),"$(BACKUP)")
 
-db-export: ## 📤 Exportar SQLite mediante Docker a import/ (FILE=homeio.sqlite3)
-	$(PYTHON) scripts/database_transfer.py export --file "$(FILE)"
-
-db-import: ## ♻️ Restaurar desde import/ mediante Docker con copia previa (FILE=homeio.sqlite3; detener también el servidor local)
-	$(PYTHON) scripts/database_transfer.py import --file "$(FILE)"
-
-db-export-local: ## 📤 Exportar SQLite localmente a import/ (FILE=homeio.sqlite3)
-	$(PY) scripts/database_transfer.py export --local --file "$(FILE)"
-
-db-import-local: ## ♻️ Restaurar desde import/ con copia previa (FILE=homeio.sqlite3; detener local y Docker)
-	$(PY) scripts/database_transfer.py import --local --file "$(FILE)"
+export-sql: ## 📤 Volcar esquema y datos a SQL en HOMEIO_BACKUP (EXPORT=ruta/volcado.sql)
+	$(PY) -m homeio.cli export-sql $(if $(EXPORT),"$(EXPORT)")
 
 test: ## 🧪 Ejecutar las pruebas de dominio, persistencia, importación y seguridad HTTP
 	$(PY) -m unittest discover -s tests -v

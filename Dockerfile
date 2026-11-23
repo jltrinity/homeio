@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt \
 COPY --chown=homeio:homeio homeio ./homeio
 COPY --chown=homeio:homeio entrypoint.sh ./entrypoint.sh
 USER homeio
-ENV HOMEIO_DATABASE=/data/homeio.sqlite3
+ENV HOMEIO_DATABASE=/data/homeio.sqlite3 HOMEIO_BACKUP=/data/backups
 EXPOSE 8000
 ENTRYPOINT ["sh", "/app/entrypoint.sh"]
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "30", "--worker-tmp-dir", "/tmp", "homeio.web.app:create_app()"]

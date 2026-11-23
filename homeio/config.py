@@ -17,6 +17,7 @@ class Settings:
     https: bool = False
     session_hours: int = 8
     version: str = "dev"
+    backup: Path = ROOT / "data/backups"
 
     @classmethod
     def load(cls) -> "Settings":
@@ -25,6 +26,7 @@ class Settings:
         if len(secret) < 32 or secret.startswith("replace-"):
             raise ValueError("Run make env first and configure HOMEIO_SECRET_KEY.")
         path = Path(os.getenv("HOMEIO_DATABASE", "data/homeio.sqlite3"))
+        backup = Path(os.getenv("HOMEIO_BACKUP", "data/backups"))
         https = os.getenv("HOMEIO_HTTPS", "false").lower() == "true"
         secure = os.getenv("HOMEIO_COOKIE_SECURE", "false").lower() == "true"
         if https and not secure:
@@ -48,4 +50,5 @@ class Settings:
             https,
             hours,
             version,
+            backup if backup.is_absolute() else ROOT / backup,
         )

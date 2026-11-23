@@ -1,6 +1,8 @@
 """Administrative operations are intentionally available only from the console."""
 
 import argparse
+from datetime import datetime, timezone
+import secrets
 import getpass
 import json
 import os
@@ -9,6 +11,7 @@ import sys
 from pathlib import Path
 from wsgiref.simple_server import make_server
 from homeio.adapters.auth import Authentication
+from homeio.adapters.backups import export_database, export_sql
 from homeio.adapters.legacy_import import import_dump
 from homeio.adapters.sqlite import initialize
 from homeio.config import Settings
@@ -29,7 +32,9 @@ def main() -> int:
     importer.add_argument("file", type=Path)
     importer.add_argument("--dry-run", action="store_true")
     backup = commands.add_parser("backup", help="Create a consistent SQLite backup")
-    backup.add_argument("destination", type=Path)
+    backup.add_argument("destination", type=Path, nargs="?")
+    exporter = commands.add_parser("export-sql", help="Export the database as SQLite SQL")
+    exporter.add_argument("destination", type=Path, nargs="?")
     args = parser.parse_args()
     try:
         settings = Settings.load()
@@ -55,16 +60,18 @@ def main() -> int:
                 )
                 + json.dumps(result)
             )
-        elif args.command == "backup":
-            # Exclusive creation prevents accidental overwrites of an existing backup.
-            with args.destination.open("xb"):
-                args.destination.chmod(0o600)
-            with (
-                sqlite3.connect(settings.database) as source,
-                sqlite3.connect(args.destination) as target,
-            ):
-                source.backup(target)
-            print("Backup completed.")
+        elif args.command in ("backup", "export-sql"):
+            stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+            extension = "sql" if args.command == "export-sql" else "sqlite3"
+            destination = args.destination or settings.backup / (
+                f"homeio-{stamp}-{secrets.token_hex(4)}.{extension}"
+            )
+            if args.command == "export-sql":
+                export_sql(settings.database, destination)
+                print(f"SQL export completed: {destination}")
+            else:
+                export_database(settings.database, destination)
+                print(f"Backup completed: {destination}")
         elif args.command == "serve":
             from homeio.web.app import App
 

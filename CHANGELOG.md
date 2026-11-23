@@ -8,12 +8,30 @@ its entries into a versioned section with the release date (`YYYY-MM-DD`).
 
 ## [Unreleased]
 
+### Removed
+
+- `db-export`, `db-import`, `db-export-local`, and `db-import-local` Makefile
+  targets; database transfers remain available through `scripts/database_transfer.py`.
+
+### Changed
+
+- Bind-mount `/srv/homeio` from the Coolify server at `/data` for persistent
+  database and backup storage; document permissions and migration from the old volume.
+
+- Honor `HOMEIO_DATABASE` in both Compose deployments and add `HOMEIO_BACKUP`
+  for persistent backup storage, including safety copies before restoration.
+  Backups without an explicit destination receive unique filenames. Documented
+  persistent volume paths and migration requirements.
+
 ### Fixed
 
 - Renamed the Coolify definition to `compose-coolify.yaml` and resolved
   its build context from the repository root; updated deployment settings.
 
 ### Added
+
+- `make export-sql` and CLI command to export a consistent full SQLite SQL dump
+  to `HOMEIO_BACKUP` or an explicit destination, without overwriting existing files.
 
 - Configurable `HOMEIO_VERSION` label next to the header logo, available locally
   and in Coolify, with `dev` as the default.

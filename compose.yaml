@@ -8,13 +8,19 @@ services:
     user: "${HOMEIO_UID:-1000}:${HOMEIO_GID:-1000}"
     env_file: .env
     environment:
-      HOMEIO_DATABASE: /data/homeio.sqlite3
+      HOMEIO_DATABASE: ${HOMEIO_DATABASE:-data/homeio.sqlite3}
+      HOMEIO_BACKUP: ${HOMEIO_BACKUP:-data/backups}
     ports:
       - "127.0.0.1:${HOMEIO_PORT:-8000}:8000"
     volumes:
       - type: bind
         source: ./data
         target: /data
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./data
+        target: /app/data
         bind:
           create_host_path: false
     restart: unless-stopped

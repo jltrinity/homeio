@@ -51,7 +51,27 @@ def export_database(database: Path, destination: Path) -> None:
         temporary.unlink(missing_ok=True)
 
 
-def restore_database(database: Path, source_path: Path) -> Path | None:
+def export_sql(database: Path, destination: Path) -> None:
+    """Dump a consistent snapshot as SQLite schema and INSERT statements."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    if destination.exists():
+        raise FileExistsError("El archivo de exportación ya existe; utiliza otro nombre.")
+    with tempfile.TemporaryDirectory(prefix=".homeio-sql-", dir=destination.parent) as directory:
+        snapshot = Path(directory) / "snapshot.sqlite3"
+        export_database(database, snapshot)
+        temporary = Path(directory) / "dump.sql"
+        descriptor = os.open(temporary, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as output:
+            with closing(open_readonly(snapshot)) as source:
+                for statement in source.iterdump():
+                    output.write(statement + "\n")
+        # Publish only a complete dump, preserving any concurrently created destination.
+        os.link(temporary, destination)
+
+
+def restore_database(
+    database: Path, source_path: Path, backup_directory: Path | None = None
+) -> Path | None:
     if database.resolve() == source_path.resolve():
         raise ValueError("El origen y el destino deben ser distintos.")
     database.parent.mkdir(parents=True, exist_ok=True)
@@ -70,7 +90,7 @@ def restore_database(database: Path, source_path: Path) -> Path | None:
             safety_copy = None
             if database.exists():
                 stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
-                safety_copy = database.with_name(
+                safety_copy = (backup_directory or database.parent) / (
                     f"{database.stem}.before-import-{stamp}-{secrets.token_hex(4)}.sqlite3"
                 )
                 export_database(database, safety_copy)
@@ -87,9 +107,16 @@ def main() -> int:
     """Stream snapshots through Docker without changing host-file ownership."""
     parser = argparse.ArgumentParser()
     parser.add_argument("operation", choices=("export", "import"))
-    parser.add_argument("database", type=Path)
+    parser.add_argument("database", type=Path, nargs="?")
+    parser.add_argument("--backup-directory", type=Path)
     args = parser.parse_args()
     try:
+        if args.database is None:
+            from homeio.config import Settings
+
+            settings = Settings.load()
+            args.database = settings.database
+            args.backup_directory = args.backup_directory or settings.backup
         with tempfile.TemporaryDirectory(prefix="homeio-transfer-") as directory:
             snapshot = Path(directory) / "snapshot.sqlite3"
             if args.operation == "export":
@@ -99,7 +126,7 @@ def main() -> int:
             else:
                 with snapshot.open("xb") as stream:
                     shutil.copyfileobj(sys.stdin.buffer, stream)
-                backup = restore_database(args.database, snapshot)
+                backup = restore_database(args.database, snapshot, args.backup_directory)
                 print(f"Importación completada. Copia previa: {backup or 'base nueva'}")
     except (OSError, ValueError, sqlite3.Error) as exc:
         print(f"Error: {exc}", file=sys.stderr)
